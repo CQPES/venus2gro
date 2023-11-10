@@ -189,7 +189,7 @@ def venus2gro(
         if anchor_masses in line:
             cur_line_idx += 2
             line = contents[cur_line_idx]
-            masses = [float(x) for x in line.split()]
+            masses = np.array([float(x) for x in line.split()])
 
         # parse traj
         if anchor_traj in line:
@@ -201,7 +201,9 @@ def venus2gro(
         # parse current traj
         if anchor_cycle in line:
             cur_cycle = int(line.split()[4])
-            cur_time = float(line.split()[6]) * 1e-02  # 10.0e-14 s -> 1.0 ps
+            # integration stepsize in units of 10-14 sec
+            # 1.0e-14 s -> 1.0e-02 ps
+            cur_time = float(line.split()[6]) * 1.0e-02
             print(f"Cycle: {cur_cycle} Time: {cur_time:.3f} ps")
 
             cur_line_idx += 4
@@ -214,15 +216,15 @@ def venus2gro(
                 line = contents[cur_line_idx]
                 arr = line.split()
 
-                # coordinates
-                xyz_atom = arr[:3]  # angstrom
-                xyz_atom = [0.1 * float(x) for x in xyz_atom]  # angstrom -> nm
+                # coordinates in units of Angstrom
+                # 1.0 Angstrom -> 0.1 nm
+                xyz_atom = 0.1 * np.array([float(x) for x in arr[:3]])
                 xyz.append(xyz_atom)
 
-                # momenta
-                p_atom = arr[3:]  # 0.1 (g/mol) * (nm/ps)
-                v_atom = [10.0 * float(p) / masses[i]
-                          for p in p_atom]  # (nm/ps)
+                # momenta in units of amu * Angstrom / (1.0e-14 s)
+                # 1.0 amu * Angstrom / (1.0e-14 s) -> 10.0 (g/mol) * (nm/ps)
+                p_atom = np.array([float(x) for x in arr[3:]])
+                v_atom = 10.0 * p_atom / masses[i]
                 vel.append(v_atom)
 
             if reorder is not None:
@@ -274,7 +276,7 @@ def venus2gro(
         traj_list = np.concatenate(traj_list).reshape(1, -1).tolist()
 
     for (traj_idx, traj) in enumerate(traj_list):
-        traj_gro_name = out_gro.replace(".gro", f"_{traj_idx}.gro")
+        traj_gro_name = out_gro.replace(".gro", f"_{traj_idx + 1}.gro")
         _auto_backup_file(traj_gro_name)
         with open(traj_gro_name, "w") as f:
             for frame in traj:
@@ -291,8 +293,6 @@ if __name__ == "__main__":
 
     # check input and output files
     _check_input_files(args)
-
-    print(args)
 
     # parse output
     traj_list = venus2gro(
