@@ -4,7 +4,7 @@ Extract coordinates and momenta from VENUS96 output and write trajectories in GR
 
 ## Requirements
 
-- python3
+- python 3.7 and above
 - numpy
 
 ## Usage
