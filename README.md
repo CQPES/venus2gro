@@ -2,6 +2,8 @@
 
 Extract coordinates and momenta from VENUS96 output and write trajectories in GROMACS gro format.
 
+Author: mizu-bai
+
 ## Requirements
 
 - python 3.7 and above
